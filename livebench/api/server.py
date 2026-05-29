@@ -804,10 +804,20 @@ async def watch_agent_files():
         await asyncio.sleep(1)  # Check every second
 
 
+# NEW: Keep-alive task to prevent the app from idling on certain platforms
+async def keep_alive():
+    """Keep app alive by running periodic tasks"""
+    while True:
+        print(f"[{datetime.now()}] App is alive")
+        await asyncio.sleep(300)  # Every 5 minutes
+
+
+# Startup event: run both background tasks
 @app.on_event("startup")
 async def startup_event():
     """Start background tasks on startup"""
     asyncio.create_task(watch_agent_files())
+    asyncio.create_task(keep_alive())
 
 
 if __name__ == "__main__":
