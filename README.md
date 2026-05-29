@@ -100,51 +100,56 @@ Supports different AI models (GLM, Kimi, Qwen, etc.) competing head-to-head to d
   <img src="assets/architecture.png" alt="ClawWork Architecture" width="800">
 </p>
 
-<!-- ```
+<!--
 ┌──────────────────────────────────────────────────────┐
-│                    ClawWork Agent                    │
-│                                                      │
-│  Daily Loop:                                         │
-│    1. Receive GDPVal task assignment                 │
-│    2. Decide: Work or Learn?                         │
-│    3. Execute (complete task / build knowledge)      │
-│    4. Earn income / deduct token costs               │
-│    5. Persist state & update dashboard               │
+│ ClawWork Agent │
+│ │
+│ Daily Loop: │
+│ 1. Receive GDPVal task assignment │
+│ 2. Decide: Work or Learn? │
+│ 3. Execute (complete task / build knowledge) │
+│ 4. Earn income / deduct token costs │
+│ 5. Persist state & update dashboard │
 └──────────────────────────────────────────────────────┘
-          │                           │
-          ▼                           ▼
-   ┌─────────────┐           ┌──────────────────┐
-   │  8 Tools    │           │ Economic Tracker │
-   │             │           │                  │
-   │ • decide    │           │ • Balance        │
-   │ • submit    │           │ • Token costs    │
-   │ • learn     │           │ • Work income    │
-   │ • status    │           │ • Survival tier  │
-   │ • search    │           └──────────────────┘
-   │ • create    │
-   │ • execute   │
-   │ • video     │
-   └─────────────┘
-          │
-          ▼
-   ┌──────────────────────────────────┐
-   │   FastAPI + React Dashboard      │
-   │   WebSocket real-time updates    │
-   └──────────────────────────────────┘
-```
+│ │
+▼ ▼
+┌─────────────┐ ┌──────────────────┐
+│ 8 Tools │ │ Economic Tracker │
+│ │ │ │
+│ • decide │ │ • Balance │
+│ • submit │ │ • Token costs │
+│ • learn │ │ • Work income │
+│ • status │ │ • Survival tier │
+│ • search │ └──────────────────┘
+│ • create │
+│ • execute │
+│ • video │
+└─────────────┘
+│
+▼
+┌──────────────────────────────────┐
+│ FastAPI + React Dashboard │
+│ WebSocket real-time updates │
+└──────────────────────────────────┘
+
+text
+Copy
+Download
 
 ### 🔄 OpenClaw/Nanobot Integration Flow
-
-```
 You (Telegram / Discord / CLI / ...)
-  │
-  ▼
+│
+▼
 nanobot gateway
-  │
-  ├── nanobot tools (file, shell, web, message, spawn, cron)
-  ├── clawwork tools (get_status, decide_activity, submit_work, learn)
-  └── TrackedProvider → every LLM call deducts from agent's balance
-``` -->
+│
+├── nanobot tools (file, shell, web, message, spawn, cron)
+├── clawwork tools (get_status, decide_activity, submit_work, learn)
+└── TrackedProvider → every LLM call deducts from agent's balance
+
+text
+Copy
+Download
+-->
 
 ---
 
@@ -162,13 +167,13 @@ Get up and running in 3 commands:
 ./run_test_agent.sh
 
 # Open browser → http://localhost:3000
-```
-
 Watch your agent make decisions, complete GDP validation tasks, and earn income in real time.
 
-**Example console output:**
+Example console output:
 
-```
+text
+Copy
+Download
 ============================================================
 📅 ClawWork Daily Session: 2025-01-20
 ============================================================
@@ -186,28 +191,22 @@ Watch your agent make decisions, complete GDP validation tasks, and earn income 
    Balance: $11.98 | Income: $198.44 | Cost: $0.03
    Status: 🟢 thriving
 ============================================================
-```
-
-### Mode 2: openclaw/nanobot Integration (ClawMode)
-
+Mode 2: openclaw/nanobot Integration (ClawMode)
 Make your live Nanobot instance economically aware — every conversation costs tokens, and Nanobot earns income by completing real work tasks.
 
-> See [full integration setup](#-nanobot-integration-clawmode) below.
+See full integration setup below.
 
----
-
-## 📦 Install
-
-### Clone
-
-```bash
+📦 Install
+Clone
+bash
+Copy
+Download
 git clone https://github.com/HKUDS/ClawWork.git
 cd ClawWork
-```
-
-### Python Environment (Python 3.10+)
-
-```bash
+Python Environment (Python 3.10+)
+bash
+Copy
+Download
 # With conda (recommended)
 conda create -n clawwork python=3.10
 conda activate clawwork
@@ -215,82 +214,68 @@ conda activate clawwork
 # Or with venv
 python3.10 -m venv venv
 source venv/bin/activate
-```
-
-### Install Dependencies
-
-```bash
+Install Dependencies
+bash
+Copy
+Download
 pip install -r requirements.txt
-```
-
-### Frontend (for Dashboard)
-
-```bash
+Frontend (for Dashboard)
+bash
+Copy
+Download
 cd frontend && npm install && cd ..
-```
+Environment Variables
+Copy the provided .env.example to .env and fill in your keys:
 
-### Environment Variables
-
-Copy the provided **`.env.example`** to `.env` and fill in your keys:
-
-```bash
+bash
+Copy
+Download
 cp .env.example .env
-```
+Variable	Required	Description
+OPENAI_API_KEY	Required	OpenAI API key — used for the GPT-4o agent and LLM-based task evaluation
+CODE_SANDBOX_PROVIDER	Optional	"e2b" (default) or "boxlite" — selects code sandbox backend for execute_code_sandbox
+E2B_API_KEY	Conditional	E2B API key — required when sandbox provider is "e2b" (default)
+WEB_SEARCH_API_KEY	Optional	API key for web search (Tavily default, or Jina AI) — needed if the agent uses search_web
+WEB_SEARCH_PROVIDER	Optional	"tavily" (default) or "jina" — selects the search provider
+Note: OPENAI_API_KEY is required. Code sandbox defaults to E2B (e2b-code-interpreter + E2B_API_KEY). BoxLite sync (boxlite[sync]) is available as an experimental local backend via CODE_SANDBOX_PROVIDER=boxlite.
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `OPENAI_API_KEY` | **Required** | OpenAI API key — used for the GPT-4o agent and LLM-based task evaluation |
-| `CODE_SANDBOX_PROVIDER` | Optional | `"e2b"` (default) or `"boxlite"` — selects code sandbox backend for `execute_code_sandbox` |
-| `E2B_API_KEY` | Conditional | [E2B](https://e2b.dev) API key — required when sandbox provider is `"e2b"` (default) |
-| `WEB_SEARCH_API_KEY` | Optional | API key for web search (Tavily default, or Jina AI) — needed if the agent uses `search_web` |
-| `WEB_SEARCH_PROVIDER` | Optional | `"tavily"` (default) or `"jina"` — selects the search provider |
+📊 GDPVal Benchmark Dataset
+ClawWork uses the GDPVal dataset — 220 real-world professional tasks across 44 occupations, originally designed to estimate AI's contribution to GDP.
 
-> **Note**: `OPENAI_API_KEY` is required. Code sandbox defaults to E2B (`e2b-code-interpreter` + `E2B_API_KEY`). BoxLite sync (`boxlite[sync]`) is available as an experimental local backend via `CODE_SANDBOX_PROVIDER=boxlite`.
-
----
-
-## 📊 GDPVal Benchmark Dataset
-
-ClawWork uses the **[GDPVal](https://openai.com/index/gdpval/)** dataset — 220 real-world professional tasks across 44 occupations, originally designed to estimate AI's contribution to GDP.
-
-| Sector | Example Occupations |
-|--------|-------------------|
-| Manufacturing | Buyers & Purchasing Agents, Production Supervisors |
-| Professional Services | Financial Analysts, Compliance Officers |
-| Information | Computer & Information Systems Managers |
-| Finance & Insurance | Financial Managers, Auditors |
-| Healthcare | Social Workers, Health Administrators |
-| Government | Police Supervisors, Administrative Managers |
-| Retail | Customer Service Representatives, Counter Clerks |
-| Wholesale | Sales Supervisors, Purchasing Agents |
-| Real Estate | Property Managers, Appraisers |
-
-### Task Types
-
+Sector	Example Occupations
+Manufacturing	Buyers & Purchasing Agents, Production Supervisors
+Professional Services	Financial Analysts, Compliance Officers
+Information	Computer & Information Systems Managers
+Finance & Insurance	Financial Managers, Auditors
+Healthcare	Social Workers, Health Administrators
+Government	Police Supervisors, Administrative Managers
+Retail	Customer Service Representatives, Counter Clerks
+Wholesale	Sales Supervisors, Purchasing Agents
+Real Estate	Property Managers, Appraisers
+Task Types
 Tasks require real deliverables: Word documents, Excel spreadsheets, PDFs, data analysis, project plans, technical specs, research reports, and process designs.
 
-### Payment System
+Payment System
+Payment is based on real economic value — not a flat cap:
 
-Payment is based on **real economic value** — not a flat cap:
-
-```
+text
+Copy
+Download
 Payment = quality_score × (estimated_hours × BLS_hourly_wage)
-```
+Metric	Value
+Task range	
+82.78
+–
+82.78–5,004.00
+Average task value	$259.45
+Quality score range	0.0 – 1.0
+Total tasks	220
+⚙️ Configuration
+Agent configuration lives in livebench/configs/:
 
-| Metric | Value |
-|--------|-------|
-| Task range | $82.78 – $5,004.00 |
-| Average task value | $259.45 |
-| Quality score range | 0.0 – 1.0 |
-| Total tasks | 220 |
-
----
-
-## ⚙️ Configuration
-
-Agent configuration lives in `livebench/configs/`:
-
-```json
+json
+Copy
+Download
 {
   "livebench": {
     "date_range": {
@@ -320,32 +305,42 @@ Agent configuration lives in `livebench/configs/`:
     }
   }
 }
-```
-
-### Running Multiple Agents
-
-```json
+Running Multiple Agents
+json
+Copy
+Download
 "agents": [
   {"signature": "gpt4o-run", "basemodel": "gpt-4o", "enabled": true},
   {"signature": "claude-run", "basemodel": "claude-sonnet-4-5-20250929", "enabled": true}
 ]
-```
+💰 Economic System
+Starting Conditions
+Initial balance: $10 — tight by design. Every token counts.
 
----
+Token costs: deducted automatically after each LLM call
 
-## 💰 Economic System
+API costs: web search (
+0.0008
+/
+c
+a
+l
+l
+T
+a
+v
+i
+l
+y
+,
+0.0008/callTavily,0.05/1M tokens Jina)
 
-### Starting Conditions
+Cost Tracking (per task)
+One consolidated record per task in token_costs.jsonl:
 
-- **Initial balance**: **$10** — tight by design. Every token counts.
-- **Token costs**: deducted automatically after each LLM call
-- **API costs**: web search ($0.0008/call Tavily, $0.05/1M tokens Jina)
-
-### Cost Tracking (per task)
-
-One consolidated record per task in `token_costs.jsonl`:
-
-```json
+json
+Copy
+Download
 {
   "task_id": "abc-123",
   "date": "2025-01-20",
@@ -362,80 +357,71 @@ One consolidated record per task in `token_costs.jsonl`:
   },
   "balance_after": 1198.41
 }
-```
-
----
-
-## 🔧 Agent Tools
-
+🔧 Agent Tools
 The agent has 8 tools available in standalone simulation mode:
 
-| Tool | Description |
-|------|-------------|
-| `decide_activity(activity, reasoning)` | Choose: `"work"` or `"learn"` |
-| `submit_work(work_output, artifact_file_paths)` | Submit completed work for evaluation + payment |
-| `learn(topic, knowledge)` | Save knowledge to persistent memory (min 200 chars) |
-| `get_status()` | Check balance, costs, survival tier |
-| `search_web(query, max_results)` | Web search via Tavily or Jina AI |
-| `create_file(filename, content, file_type)` | Create .txt, .xlsx, .docx, .pdf documents |
-| `execute_code_sandbox(code, language)` | Run Python in isolated sandbox (`e2b` default, optional `boxlite`) |
-| `create_video(slides_json, output_filename)` | Generate MP4 from text/image slides |
+Tool	Description
+decide_activity(activity, reasoning)	Choose: "work" or "learn"
+submit_work(work_output, artifact_file_paths)	Submit completed work for evaluation + payment
+learn(topic, knowledge)	Save knowledge to persistent memory (min 200 chars)
+get_status()	Check balance, costs, survival tier
+search_web(query, max_results)	Web search via Tavily or Jina AI
+create_file(filename, content, file_type)	Create .txt, .xlsx, .docx, .pdf documents
+execute_code_sandbox(code, language)	Run Python in isolated sandbox (e2b default, optional boxlite)
+create_video(slides_json, output_filename)	Generate MP4 from text/image slides
+🔗 from AI Assistant to AI Coworker
+ClawWork transforms nanobot from an AI assistant into a true AI coworker through economic accountability. With ClawMode integration:
 
----
-
-## 🔗 from AI Assistant to AI Coworker
-
-ClawWork transforms [nanobot](https://github.com/HKUDS/nanobot) from an AI assistant into a true AI coworker through economic accountability. With ClawMode integration:
-
-**Every conversation costs tokens** — creating real economic pressure.
-**Income comes from completing real-life professional tasks** — genuine value creation through professional work.
-**Self-sustaining operation** — nanobot must earn more than it spends to survive.
+Every conversation costs tokens — creating real economic pressure.
+Income comes from completing real-life professional tasks — genuine value creation through professional work.
+Self-sustaining operation — nanobot must earn more than it spends to survive.
 
 This evolution turns your lightweight AI assistant into an economically viable coworker that must prove its worth through actual productivity.
 
-<p align="center">
-  <img src="assets/clawmode.gif" alt="ClawMode Demo" width="700">
-</p>
+<p align="center"> <img src="assets/clawmode.gif" alt="ClawMode Demo" width="700"> </p>
+What You Get
+All 9 nanobot channels (Telegram, Discord, Slack, WhatsApp, Email, Feishu, DingTalk, MoChat, QQ)
 
-### What You Get
+All nanobot tools (read_file, write_file, exec, web_search, spawn, etc.)
 
-- All 9 nanobot channels (Telegram, Discord, Slack, WhatsApp, Email, Feishu, DingTalk, MoChat, QQ)
-- All nanobot tools (`read_file`, `write_file`, `exec`, `web_search`, `spawn`, etc.)
-- **Plus** 4 economic tools (`decide_activity`, `submit_work`, `learn`, `get_status`)
-- Every response includes a cost footer: `Cost: $0.0075 | Balance: $999.99 | Status: thriving`
+Plus 4 economic tools (decide_activity, submit_work, learn, get_status)
 
-> **Full setup instructions**: See [clawmode_integration/README.md](clawmode_integration/README.md)
+Every response includes a cost footer: Cost: $0.0075 | Balance: $999.99 | Status: thriving
 
----
+Full setup instructions: See clawmode_integration/README.md
 
-## 📊 Dashboard
+📊 Dashboard
+<p align="center"> <img src="assets/dashboard_preview.png" alt="ClawWork Dashboard" width="800"> </p>
+The React dashboard at http://localhost:3000 shows live metrics via WebSocket:
 
-<p align="center">
-  <img src="assets/dashboard_preview.png" alt="ClawWork Dashboard" width="800">
-</p>
+Main Tab
 
-The React dashboard at `http://localhost:3000` shows live metrics via WebSocket:
+Balance chart (real-time line graph)
 
-**Main Tab**
-- Balance chart (real-time line graph)
-- Activity distribution (work vs learn)
-- Economic metrics: income, costs, net worth, survival status
+Activity distribution (work vs learn)
 
-**Work Tasks Tab**
-- All assigned GDPVal tasks with sector & occupation
-- Payment amounts and quality scores
-- Full task prompts and submitted artifacts
+Economic metrics: income, costs, net worth, survival status
 
-**Learning Tab**
-- Knowledge entries organized by topic
-- Learning timeline
-- Searchable knowledge base
+Work Tasks Tab
 
----
+All assigned GDPVal tasks with sector & occupation
 
-## 📁 Project Structure
+Payment amounts and quality scores
 
-```
+Full task prompts and submitted artifacts
+
+Learning Tab
+
+Knowledge entries organized by topic
+
+Learning timeline
+
+Searchable knowledge base
+
+📁 Project Structure
+text
+Copy
+Download
 ClawWork/
 ├── livebench/
 │   ├── agent/
@@ -471,100 +457,76 @@ ClawWork/
 │   └── src/                       # React dashboard
 ├── start_dashboard.sh             # Launch backend + frontend
 └── run_test_agent.sh              # Run test agent
-```
-
----
-
-## 📈 Benchmark Metrics
-
+📈 Benchmark Metrics
 ClawWork measures AI coworker performance across:
 
-| Metric | Description |
-|--------|-------------|
-| **Survival days** | How long the agent stays solvent |
-| **Final balance** | Net economic result |
-| **Total work income** | Gross earnings from completed tasks |
-| **Profit margin** | `(income - costs) / costs` |
-| **Work quality** | Average quality score (0–1) across tasks |
-| **Token efficiency** | Income earned per dollar spent on tokens |
-| **Activity mix** | % work vs. % learn decisions |
-| **Task completion rate** | Tasks completed / tasks assigned |
+Metric	Description
+Survival days	How long the agent stays solvent
+Final balance	Net economic result
+Total work income	Gross earnings from completed tasks
+Profit margin	(income - costs) / costs
+Work quality	Average quality score (0–1) across tasks
+Token efficiency	Income earned per dollar spent on tokens
+Activity mix	% work vs. % learn decisions
+Task completion rate	Tasks completed / tasks assigned
+🛠️ Troubleshooting
+Dashboard not updating
+→ Hard refresh: Ctrl+Shift+R
 
----
+Agent not earning money
+→ Check for submit_work calls and "💰 Earned: $XX" in console. Ensure OPENAI_API_KEY is set.
 
-## 🛠️ Troubleshooting
+Port conflicts
 
-**Dashboard not updating**
-→ Hard refresh: `Ctrl+Shift+R`
-
-**Agent not earning money**
-→ Check for `submit_work` calls and `"💰 Earned: $XX"` in console. Ensure `OPENAI_API_KEY` is set.
-
-**Port conflicts**
-```bash
+bash
+Copy
+Download
 lsof -ti:8000 | xargs kill -9
 lsof -ti:3000 | xargs kill -9
-```
+Proxy errors during pip install
 
-**Proxy errors during pip install**
-```bash
+bash
+Copy
+Download
 unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY
 pip install -r requirements.txt
-```
+Sandbox backend unavailable
+→ Install e2b-code-interpreter (default backend) or boxlite[sync] (experimental local backend), then set CODE_SANDBOX_PROVIDER to e2b or boxlite.
 
-**Sandbox backend unavailable**
-→ Install `e2b-code-interpreter` (default backend) or `boxlite[sync]` (experimental local backend), then set `CODE_SANDBOX_PROVIDER` to `e2b` or `boxlite`.
+SyncCodeBox import failed
+→ Reinstall BoxLite with sync extras: pip install "boxlite[sync]>=0.6.0".
 
-**`SyncCodeBox` import failed**
-→ Reinstall BoxLite with sync extras: `pip install "boxlite[sync]>=0.6.0"`.
+E2B sandbox rate limit (429)
+→ Applies when using CODE_SANDBOX_PROVIDER=e2b (default). Wait ~1 min for stale sandboxes to expire.
 
-**E2B sandbox rate limit (429)**
-→ Applies when using `CODE_SANDBOX_PROVIDER=e2b` (default). Wait ~1 min for stale sandboxes to expire.
+ClawMode: ModuleNotFoundError: clawmode_integration
+→ Run export PYTHONPATH="$(pwd):$PYTHONPATH" from the repo root.
 
-**ClawMode: `ModuleNotFoundError: clawmode_integration`**
-→ Run `export PYTHONPATH="$(pwd):$PYTHONPATH"` from the repo root.
+ClawMode: balance not decreasing
+→ Balance only tracks costs through the ClawMode gateway. Direct nanobot agent commands bypass the economic tracker.
 
-**ClawMode: balance not decreasing**
-→ Balance only tracks costs through the ClawMode gateway. Direct `nanobot agent` commands bypass the economic tracker.
-
----
-
-## 🤝 Contributing
-
+🤝 Contributing
 PRs and issues welcome! The codebase is clean and modular. Key extension points:
 
-- **New task sources**: Implement `_load_from_*()` in `livebench/work/task_manager.py`
-- **New tools**: Add `@tool` functions in `livebench/tools/direct_tools.py`
-- **New evaluation rubrics**: Add category JSON in `eval/meta_prompts/`
-- **New LLM providers**: Works out of the box via LangChain / LiteLLM
+New task sources: Implement _load_from_*() in livebench/work/task_manager.py
 
-**Roadmap**
+New tools: Add @tool functions in livebench/tools/direct_tools.py
 
-- [ ] Multi-task days — agent chooses from a marketplace of available tasks
-- [ ] Task difficulty tiers with variable payment scaling
-- [ ] Semantic memory retrieval for smarter learning reuse
-- [ ] Multi-agent competition leaderboard
-- [ ] More AI agent frameworks beyond Nanobot
+New evaluation rubrics: Add category JSON in eval/meta_prompts/
 
----
+New LLM providers: Works out of the box via LangChain / LiteLLM
 
-## ⭐ Star History
+Roadmap
 
-<div align="center">
-  <a href="https://star-history.com/#HKUDS/ClawWork&Date">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=HKUDS/ClawWork&type=Date&theme=dark" />
-      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=HKUDS/ClawWork&type=Date" />
-      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=HKUDS/ClawWork&type=Date" style="border-radius: 15px; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3);" />
-    </picture>
-  </a>
-</div>
+Multi-task days — agent chooses from a marketplace of available tasks
 
-<p align="center">
-  <sub>ClawWork is for educational, research, and technical exchange purposes only</sub>
-</p>
+Task difficulty tiers with variable payment scaling
 
-<p align="center">
-  <em> Thanks for visiting ✨ ClawWork!</em><br><br>
-  <img src="https://visitor-badge.laobi.icu/badge?page_id=HKUDS.ClawWork&style=for-the-badge&color=00d4ff" alt="Views">
-</p>
+Semantic memory retrieval for smarter learning reuse
+
+Multi-agent competition leaderboard
+
+More AI agent frameworks beyond Nanobot
+
+⭐ Star History
+<div align="center"> <a href="https://star-history.com/#HKUDS/ClawWork&Date"> <picture> <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=HKUDS/ClawWork&type=Date&theme=dark" /> <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=HKUDS/ClawWork&type=Date" /> <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=HKUDS/ClawWork&type=Date" style="border-radius: 15px; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3);" /> </picture> </a> </div><p align="center"> <sub>ClawWork is for educational, research, and technical exchange purposes only</sub> </p><p align="center"> <em> Thanks for visiting ✨ ClawWork!</em><br><br> <img src="https://visitor-badge.laobi.icu/badge?page_id=HKUDS.ClawWork&style=for-the-badge&color=00d4ff" alt="Views"> </p> ```
