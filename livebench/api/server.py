@@ -192,7 +192,17 @@ async def root():
         }
     }
 
-
+from fastapi.staticfiles import StaticFiles  
+from fastapi.responses import FileResponse  
+  
+# Mount static files from the frontend build directory  
+app.mount("/static", StaticFiles(directory="frontend/dist"), name="static")  
+  
+@app.get("/")  
+async def root():  
+    """Serve the React frontend"""  
+    return FileResponse('frontend/dist/index.html')  
+  
 @app.get("/api/agents")
 async def get_agents():
     """Get list of all agents with their current status"""
