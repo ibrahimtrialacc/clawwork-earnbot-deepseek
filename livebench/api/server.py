@@ -673,7 +673,12 @@ async def get_artifact_file(path: str = Query(...)):
     media_type = ARTIFACT_MIME_TYPES.get(ext, 'application/octet-stream')
     return FileResponse(file_path, media_type=media_type)
 
-
+@app.get("/test-asset")
+async def test_asset():
+    file_path = Path(__file__).parent.parent.parent / "frontend" / "dist" / "assets" / "index-B2A2avCo.css"
+    if file_path.exists():
+        return FileResponse(str(file_path), media_type="text/css")
+    return {"error": "not found"}
 @app.get("/api/settings/hidden-agents")
 async def get_hidden_agents():
     """Get list of hidden agent signatures"""
