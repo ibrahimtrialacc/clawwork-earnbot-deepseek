@@ -21,7 +21,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 app = FastAPI(title="LiveBench API", version="1.0.0")
-
+@app.get("/debug")
+async def debug_info():
+    dist_path = Path(__file__).parent.parent.parent / "frontend" / "dist"
+    return {
+        "dist_exists": dist_path.exists(),
+        "dist_path": str(dist_path),
+        "files": [f.name for f in dist_path.iterdir()] if dist_path.exists() else []
+    }
 # Enable CORS for frontend
 app.add_middleware(
     CORSMiddleware,
