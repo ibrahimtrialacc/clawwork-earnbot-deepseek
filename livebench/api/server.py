@@ -21,18 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 app = FastAPI(title="LiveBench API", version="1.0.0")
-@app.get("/debug")
-async def debug_info():
-    dist_path = Path(__file__).parent.parent.parent / "frontend" / "dist"
-    asset_file = dist_path / "assets" / "index-B2A2avCo.css"
-    return {
-        "dist_exists": dist_path.exists(),
-        "dist_path": str(dist_path),
-        "files_in_dist": [f.name for f in dist_path.iterdir()] if dist_path.exists() else [],
-        "asset_path": str(asset_file),
-        "asset_exists": asset_file.exists(),
-        "files_in_assets": [f.name for f in (dist_path/"assets").iterdir()] if (dist_path/"assets").exists() else []
-    }
+
 # Enable CORS for frontend
 app.add_middleware(
     CORSMiddleware,
@@ -42,14 +31,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files from the frontend build directory (only if it exists)
-frontend_dist = Path(__file__).parent.parent.parent / "frontend" / "dist"
-print("=== DEBUG ===")
-print("Looking for frontend at:", frontend_dist)
-print("Does it exist?", frontend_dist.exists())
-print("=============")
-if frontend_dist.exists():
-    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
+# --------------------------------------------------------------------------
+# Static file serving replaced by explicit catch-all route (see bottom)
+# The former mount caused 404s on Render – bypassed for reliability.
+# frontend_dist = Path(__file__).parent.parent.parent / "frontend" / "dist"
+# if frontend_dist.exists():
+#     app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
+# --------------------------------------------------------------------------
 
 # Data path
 DATA_PATH = Path(__file__).parent.parent / "data" / "agent_data"
@@ -194,6 +182,21 @@ class ConnectionManager:
 
 
 manager = ConnectionManager()
+
+
+@app.get("/debug")
+async def debug_info():
+    dist_path = Path(__file__).parent.parent.parent / "frontend" / "dist"
+    asset_file = dist_path / "assets" / "index-B2A2avCo.css"
+    return {
+        "dist_exists": dist_path.exists(),
+        "dist_path": str(dist_path),
+        "files_in_dist": [f.name for f in dist_path.iterdir()] if dist_path.exists() else [],
+        "asset_path": str(asset_file),
+        "asset_exists": asset_file.exists(),
+        "files_in_assets": [f.name for f in (dist_path / "assets").iterdir()] if (dist_path / "assets").exists() else []
+    }
+
 
 @app.get("/api/agents")
 async def get_agents():
@@ -677,12 +680,7 @@ async def get_artifact_file(path: str = Query(...)):
     media_type = ARTIFACT_MIME_TYPES.get(ext, 'application/octet-stream')
     return FileResponse(file_path, media_type=media_type)
 
-@app.get("/test-asset")
-async def test_asset():
-    file_path = Path(__file__).parent.parent.parent / "frontend" / "dist" / "assets" / "index-B2A2avCo.css"
-    if file_path.exists():
-        return FileResponse(str(file_path), media_type="text/css")
-    return {"error": "not found"}
+
 @app.get("/api/settings/hidden-agents")
 async def get_hidden_agents():
     """Get list of hidden agent signatures"""
@@ -713,6 +711,30 @@ async def get_displaying_names():
         with open(DISPLAYING_NAMES_PATH, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {}
+
+
+# ---------- Catch-all route to serve frontend static files ----------
+# This replaces the StaticFiles mount that caused 404s on Render.
+# Must be placed AFTER all /api routes so they take precedence.
+@app.get("/{filename:path}")
+async def serve_frontend(filename: str):
+    """Serve any static file from the frontend build directory."""
+    dist_dir = Path(__file__).parent.parent.parent / "frontend" / "dist"
+    file_path = (dist_dir / filename).resolve()
+
+    # Security: prevent directory traversal outside dist
+    if not str(file_path).startswith(str(dist_dir.resolve())):
+        raise HTTPException(status_code=403)
+
+    if file_path.is_file():
+        return FileResponse(str(file_path))
+
+    # For SPA routing, fallback to index.html
+    index_path = dist_dir / "index.html"
+    if index_path.exists():
+        return FileResponse(str(index_path))
+
+    raise HTTPException(status_code=404)
 
 
 @app.websocket("/ws")
