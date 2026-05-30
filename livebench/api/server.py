@@ -38,7 +38,7 @@ print("Looking for frontend at:", frontend_dist)
 print("Does it exist?", frontend_dist.exists())
 print("=============")
 if frontend_dist.exists():
-    app.mount("/static", StaticFiles(directory=str(frontend_dist)), name="static")
+    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
 
 # Data path
 DATA_PATH = Path(__file__).parent.parent / "data" / "agent_data"
