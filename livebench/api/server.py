@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import glob
@@ -30,6 +31,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files from the frontend build directory
+app.mount("/static", StaticFiles(directory="frontend/dist"), name="static")
 
 # Data path
 DATA_PATH = Path(__file__).parent.parent / "data" / "agent_data"
@@ -178,31 +182,10 @@ manager = ConnectionManager()
 
 @app.get("/")
 async def root():
-    """API root endpoint"""
-    return {
-        "message": "LiveBench API",
-        "version": "1.0.0",
-        "endpoints": {
-            "agents": "/api/agents",
-            "agent_detail": "/api/agents/{signature}",
-            "tasks": "/api/agents/{signature}/tasks",
-            "learning": "/api/agents/{signature}/learning",
-            "economic": "/api/agents/{signature}/economic",
-            "websocket": "/ws"
-        }
-    }
+    """Serve the React frontend"""
+    return FileResponse('frontend/dist/index.html')
 
-from fastapi.staticfiles import StaticFiles  
-from fastapi.responses import FileResponse  
-  
-# Mount static files from the frontend build directory  
-app.mount("/static", StaticFiles(directory="frontend/dist"), name="static")  
-  
-@app.get("/")  
-async def root():  
-    """Serve the React frontend"""  
-    return FileResponse('frontend/dist/index.html')  
-  
+
 @app.get("/api/agents")
 async def get_agents():
     """Get list of all agents with their current status"""
@@ -557,11 +540,11 @@ async def get_leaderboard():
 
         avg_eval_score = (sum(evaluation_scores) / len(evaluation_scores)) if evaluation_scores else None
 
-        # Load task completions (authoritative source) — used for wall-clock and task count
+        # Load task completions (authoritative source)
         task_completions_by_task_id = _load_task_completions_by_task_id(agent_dir)
         task_completions_by_date = _load_task_completions_by_date(agent_dir)
 
-        # Strip balance history to essential fields, exclude initialization
+        # Strip balance history to essential fields
         stripped_history = []
         for entry in balance_history:
             if entry.get("date") == "initialization":
@@ -571,15 +554,13 @@ async def get_leaderboard():
                 "balance": entry.get("balance", 0),
             })
 
-        # Build wall-clock series from task_completions (every entry has wall_clock_seconds).
-        # We pair each completion with the balance recorded in balance.jsonl for that task_id.
+        # Build wall-clock series from task_completions
         balance_by_task_id = {}
         for entry in balance_history:
             tid = entry.get("task_id")
             if tid:
                 balance_by_task_id[tid] = entry.get("balance", 0)
 
-        # Sort completions by timestamp so cumulative hours are in execution order
         sorted_completions = sorted(
             task_completions_by_task_id.values(),
             key=lambda e: e.get("timestamp") or "",
@@ -606,7 +587,7 @@ async def get_leaderboard():
             "total_work_income": latest.get("total_work_income", 0),
             "net_worth": latest.get("net_worth", 0),
             "survival_status": latest.get("survival_status", "unknown"),
-            "num_tasks": len(task_completions_by_task_id),  # authoritative count from task_completions.jsonl
+            "num_tasks": len(task_completions_by_task_id),
             "avg_eval_score": avg_eval_score,
             "balance_history": stripped_history,
             "wc_series": wc_series,
@@ -647,7 +628,6 @@ async def get_random_artifacts(count: int = Query(default=30, ge=1, le=100)):
             for file_path in date_dir.rglob("*"):
                 if not file_path.is_file():
                     continue
-                # Skip code_exec, videos, and reference_files directories
                 rel_parts = file_path.relative_to(date_dir).parts
                 if any(p in ('code_exec', 'videos', 'reference_files') for p in rel_parts):
                     continue
@@ -677,7 +657,6 @@ async def get_artifact_file(path: str = Query(...)):
         raise HTTPException(status_code=400, detail="Invalid path")
 
     file_path = (DATA_PATH / path).resolve()
-    # Ensure resolved path is within DATA_PATH
     if not str(file_path).startswith(str(DATA_PATH.resolve())):
         raise HTTPException(status_code=403, detail="Access denied")
 
@@ -711,6 +690,7 @@ async def set_hidden_agents(body: dict):
 
 DISPLAYING_NAMES_PATH = Path(__file__).parent.parent / "data" / "displaying_names.json"
 
+
 @app.get("/api/settings/displaying-names")
 async def get_displaying_names():
     """Get display name mapping {signature: display_name}"""
@@ -725,16 +705,13 @@ async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time updates"""
     await manager.connect(websocket)
     try:
-        # Send initial connection message
         await websocket.send_json({
             "type": "connected",
             "message": "Connected to LiveBench real-time updates"
         })
 
-        # Keep connection alive and listen for messages
         while True:
             data = await websocket.receive_text()
-            # Echo back for now, in production this would handle commands
             await websocket.send_json({
                 "type": "echo",
                 "data": data
@@ -745,20 +722,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.post("/api/broadcast")
 async def broadcast_message(message: dict):
-    """
-    Endpoint for LiveBench to broadcast updates to connected clients
-    This should be called by the LiveAgent during execution
-    """
+    """Endpoint for LiveBench to broadcast updates to connected clients"""
     await manager.broadcast(message)
     return {"status": "broadcast sent"}
 
 
-# File watcher for live updates (optional, for when agents are running)
 async def watch_agent_files():
-    """
-    Watch agent data files for changes and broadcast updates
-    This runs as a background task
-    """
+    """Watch agent data files for changes and broadcast updates"""
     import time
     last_modified = {}
 
@@ -769,7 +739,6 @@ async def watch_agent_files():
                     if agent_dir.is_dir():
                         signature = agent_dir.name
 
-                        # Check balance file
                         balance_file = agent_dir / "economic" / "balance.jsonl"
                         if balance_file.exists():
                             mtime = balance_file.stat().st_mtime
@@ -778,7 +747,6 @@ async def watch_agent_files():
                             if key not in last_modified or mtime > last_modified[key]:
                                 last_modified[key] = mtime
 
-                                # Read latest balance
                                 with open(balance_file, 'r') as f:
                                     lines = f.readlines()
                                     if lines:
@@ -789,7 +757,6 @@ async def watch_agent_files():
                                             "data": data
                                         })
 
-                        # Check decisions file
                         decision_file = agent_dir / "decisions" / "decisions.jsonl"
                         if decision_file.exists():
                             mtime = decision_file.stat().st_mtime
@@ -798,7 +765,6 @@ async def watch_agent_files():
                             if key not in last_modified or mtime > last_modified[key]:
                                 last_modified[key] = mtime
 
-                                # Read latest decision
                                 with open(decision_file, 'r') as f:
                                     lines = f.readlines()
                                     if lines:
@@ -811,18 +777,16 @@ async def watch_agent_files():
         except Exception as e:
             print(f"Error watching files: {e}")
 
-        await asyncio.sleep(1)  # Check every second
+        await asyncio.sleep(1)
 
 
-# NEW: Keep-alive task to prevent the app from idling on certain platforms
 async def keep_alive():
     """Keep app alive by running periodic tasks"""
     while True:
         print(f"[{datetime.now()}] App is alive")
-        await asyncio.sleep(300)  # Every 5 minutes
+        await asyncio.sleep(300)
 
 
-# Startup event: run both background tasks
 @app.on_event("startup")
 async def startup_event():
     """Start background tasks on startup"""
