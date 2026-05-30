@@ -32,8 +32,7 @@ app.add_middleware(
 )
 
 # Mount static files from the frontend build directory (only if it exists)
-frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
-if frontend_dist.exists():
+frontend_dist = Path(__file__).parent.parent.parent / "frontend" / "dist"if frontend_dist.exists():
     app.mount("/static", StaticFiles(directory=str(frontend_dist)), name="static")
 
 # Data path
@@ -184,7 +183,7 @@ manager = ConnectionManager()
 @app.get("/")
 async def root():
     """Serve the React frontend or API info if frontend not built"""
-    frontend_dist_path = Path(__file__).parent.parent / "frontend" / "dist"
+    frontend_dist_path = Path(__file__).parent.parent.parent / "frontend" / "dist"
     index_html = frontend_dist_path / "index.html"
 
     if index_html.exists():
