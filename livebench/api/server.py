@@ -24,10 +24,14 @@ app = FastAPI(title="LiveBench API", version="1.0.0")
 @app.get("/debug")
 async def debug_info():
     dist_path = Path(__file__).parent.parent.parent / "frontend" / "dist"
+    asset_file = dist_path / "assets" / "index-B2A2avCo.css"
     return {
         "dist_exists": dist_path.exists(),
         "dist_path": str(dist_path),
-        "files": [f.name for f in dist_path.iterdir()] if dist_path.exists() else []
+        "files_in_dist": [f.name for f in dist_path.iterdir()] if dist_path.exists() else [],
+        "asset_path": str(asset_file),
+        "asset_exists": asset_file.exists(),
+        "files_in_assets": [f.name for f in (dist_path/"assets").iterdir()] if (dist_path/"assets").exists() else []
     }
 # Enable CORS for frontend
 app.add_middleware(
