@@ -19,7 +19,6 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import glob
 
 app = FastAPI(title="LiveBench API", version="1.0.0")
 
@@ -32,8 +31,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files from the frontend build directory
-app.mount("/static", StaticFiles(directory="frontend/dist"), name="static")
+# Mount static files from the frontend build directory (only if it exists)
+frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+if frontend_dist.exists():
+    app.mount("/static", StaticFiles(directory=str(frontend_dist)), name="static")
 
 # Data path
 DATA_PATH = Path(__file__).parent.parent / "data" / "agent_data"
@@ -182,8 +183,26 @@ manager = ConnectionManager()
 
 @app.get("/")
 async def root():
-    """Serve the React frontend"""
-    return FileResponse('frontend/dist/index.html')
+    """Serve the React frontend or API info if frontend not built"""
+    frontend_dist_path = Path(__file__).parent.parent / "frontend" / "dist"
+    index_html = frontend_dist_path / "index.html"
+
+    if index_html.exists():
+        return FileResponse(str(index_html))
+
+    # Fallback to API info if frontend not built
+    return {
+        "message": "LiveBench API",
+        "version": "1.0.0",
+        "endpoints": {
+            "agents": "/api/agents",
+            "agent_detail": "/api/agents/{signature}",
+            "tasks": "/api/agents/{signature}/tasks",
+            "learning": "/api/agents/{signature}/learning",
+            "economic": "/api/agents/{signature}/economic",
+            "websocket": "/ws"
+        }
+    }
 
 
 @app.get("/api/agents")
@@ -480,6 +499,7 @@ async def get_agent_economic(signature: str):
             token_costs.append(data.get("daily_token_cost", 0))
             work_income.append(data.get("work_income_delta", 0))
 
+    # Get the latest entry safely
     latest = json.loads(line) if line else {}
 
     return {
