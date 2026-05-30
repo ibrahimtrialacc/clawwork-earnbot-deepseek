@@ -184,32 +184,6 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-
-@app.get("/")
-async def root():
-    """Serve the React frontend or API info if frontend not built"""
-    frontend_dist_path = Path(__file__).parent.parent.parent / "frontend" / "dist"
-    index_html = frontend_dist_path / "index.html"
-    print("Root endpoint — checking:", index_html)
-    print("Exists?", index_html.exists())
-    if index_html.exists():
-        return FileResponse(str(index_html))
-
-    # Fallback to API info if frontend not built
-    return {
-        "message": "LiveBench API",
-        "version": "1.0.0",
-        "endpoints": {
-            "agents": "/api/agents",
-            "agent_detail": "/api/agents/{signature}",
-            "tasks": "/api/agents/{signature}/tasks",
-            "learning": "/api/agents/{signature}/learning",
-            "economic": "/api/agents/{signature}/economic",
-            "websocket": "/ws"
-        }
-    }
-
-
 @app.get("/api/agents")
 async def get_agents():
     """Get list of all agents with their current status"""
